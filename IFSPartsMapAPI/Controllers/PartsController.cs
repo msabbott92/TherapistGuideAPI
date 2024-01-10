@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using IFSPartsMapAPI.Models;
+using IFSPartsMapAPI.Data; // Add this line if not already there
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace IFSPartsMapAPI.Controllers
 {
@@ -8,17 +10,20 @@ namespace IFSPartsMapAPI.Controllers
     [Route("api/patient/{patientId}/parts")]
     public class PartsController : ControllerBase
     {
-        private readonly IFSPartsMap _iFSPartsMap;
+        private readonly IFSPartsMapDbContext _context;
 
-        public PartsController(IFSPartsMap iFSPartsMap)
+        public PartsController(IFSPartsMapDbContext context)
         {
-            _iFSPartsMap = iFSPartsMap ?? throw new ArgumentNullException(nameof(iFSPartsMap));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<IFSPart>> GetParts(int patientId)
         {
-            var parts = _iFSPartsMap.Parts.Where(x => x.PatientId == patientId).ToList();
+            var parts = _context.Parts
+                                .Where(x => x.PatientId == patientId)
+                                .Include(p => p.QuestionResponses)
+                                .ToList();
             if (!parts.Any())
             {
                 return NotFound($"No parts found for patient ID {patientId}.");
@@ -29,7 +34,7 @@ namespace IFSPartsMapAPI.Controllers
         [HttpGet("{partId}")]
         public ActionResult<IFSPart> GetPart(int patientId, int partId)
         {
-            var partToReturn = _iFSPartsMap.Parts.FirstOrDefault(x => x.Id == partId && x.PatientId == patientId);
+            var partToReturn = _context.Parts.FirstOrDefault(x => x.Id == partId && x.PatientId == patientId);
 
             if (partToReturn == null)
             {
@@ -41,14 +46,14 @@ namespace IFSPartsMapAPI.Controllers
         [HttpPost]
         public ActionResult<IFSPart> CreatePart(int patientId, IFSPart part)
         {
-            var patient = _iFSPartsMap.Patients.FirstOrDefault(p => p.PatientId == patientId);
+            var patient = _context.Patients.FirstOrDefault(p => p.PatientId == patientId);
             if (patient == null)
             {
                 return NotFound($"Patient with ID {patientId} not found.");
             }
 
             part.PatientId = patientId;
-            _iFSPartsMap.Parts.Add(part);
+            _context.Parts.Add(part);
             patient.IFSParts.Add(part);
 
             return CreatedAtAction(nameof(GetPart), new { patientId = patientId, partId = part.Id }, part);
@@ -57,7 +62,7 @@ namespace IFSPartsMapAPI.Controllers
         [HttpPut("{partId}")]
         public IActionResult UpdatePart(int patientId, int partId, IFSPart updatedPart)
         {
-            var patient = _iFSPartsMap.Patients.FirstOrDefault(p => p.PatientId == patientId);
+            var patient = _context.Patients.FirstOrDefault(p => p.PatientId == patientId);
             if (patient == null)
             {
                 return NotFound($"Patient with ID {patientId} not found.");
@@ -80,7 +85,7 @@ namespace IFSPartsMapAPI.Controllers
         [HttpDelete("{partId}")]
         public IActionResult DeletePart(int patientId, int partId)
         {
-            var patient = _iFSPartsMap.Patients.FirstOrDefault(p => p.PatientId == patientId);
+            var patient = _context.Patients.FirstOrDefault(p => p.PatientId == patientId);
             if (patient == null)
             {
                 return NotFound($"Patient with ID {patientId} not found.");
@@ -93,7 +98,7 @@ namespace IFSPartsMapAPI.Controllers
             }
 
             patient.IFSParts.Remove(part); // Remove from patient's list
-            _iFSPartsMap.Parts.Remove(part); // Remove from the global list
+            _context.Parts.Remove(part); // Remove from the global list
 
             return NoContent();
         }

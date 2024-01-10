@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.StaticFiles;
-using IFSPartsMapAPI; // Make sure to include the namespace where IFSPartsMap is located
+using Microsoft.EntityFrameworkCore;
+using IFSPartsMapAPI.Data; // Assuming your DbContext is in this namespace
+using Microsoft.Extensions.Configuration;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +16,9 @@ builder.Services.AddControllers(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register IFSPartsMap as a singleton service
-builder.Services.AddSingleton<IFSPartsMap>();
+// Register your DbContext
+builder.Services.AddDbContext<IFSPartsMapDbContext>(options =>
+    options.UseInMemoryDatabase("IFSGuideDB"));
 
 // Register FileExtensionContentTypeProvider as a singleton service
 builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
@@ -22,12 +26,12 @@ builder.Services.AddSingleton<FileExtensionContentTypeProvider>();
 // Add CORS services
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(builder =>
+    options.AddDefaultPolicy(policy =>
     {
-        builder.WithOrigins("http://localhost:5195", "http://172.20.21.42:5195","https://localhost:7282", "https://172.20.21.42:7282"
-                             ) // Use localhost for emulator/simulator
-               .AllowAnyHeader()
-               .AllowAnyMethod();
+        policy.WithOrigins("http://localhost:5195", "http://172.20.21.42:5195",
+                           "https://localhost:7282", "https://172.20.21.42:7282")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
 

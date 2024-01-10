@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using IFSPartsMapAPI.Models;
 using System.Linq;
+using IFSPartsMapAPI.Data;
 
 namespace IFSPartsMapAPI.Controllers
 {
@@ -8,23 +9,23 @@ namespace IFSPartsMapAPI.Controllers
     [Route("api/patients")]
     public class PatientController : ControllerBase
     {
-        private readonly IFSPartsMap _iFSPartsMap;
+        private readonly IFSPartsMapDbContext _context;
 
-        public PatientController(IFSPartsMap iFSPartsMap)
+        public PatientController(IFSPartsMapDbContext context)
         {
-            _iFSPartsMap = iFSPartsMap;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<Patient>> GetPatients()
         {
-            return Ok(_iFSPartsMap.Patients);
+            return Ok(_context.Patients);
         }
 
         [HttpGet("{id}")]
         public ActionResult<Patient> GetPatient(int id)
         {
-            var patient = _iFSPartsMap.Patients.FirstOrDefault(p => p.PatientId == id);
+            var patient = _context.Patients.FirstOrDefault(p => p.PatientId == id);
 
             if (patient == null)
             {
@@ -33,19 +34,20 @@ namespace IFSPartsMapAPI.Controllers
 
             return Ok(patient);
         }
-
         [HttpPost]
-        public ActionResult<Patient> CreatePatient(Patient patient)
+        public async Task<ActionResult<Patient>> CreatePatient(Patient patient)
         {
-            // In a real application, you would also need to check for existing patients, validate inputs, etc.
-            _iFSPartsMap.Patients.Add(patient);
+            _context.Patients.Add(patient);
+            await _context.SaveChangesAsync(); 
+
             return CreatedAtAction(nameof(GetPatient), new { id = patient.PatientId }, patient);
         }
+
 
         [HttpPut("{id}")]
         public IActionResult UpdatePatient(int id, Patient patient)
         {
-            var existingPatient = _iFSPartsMap.Patients.FirstOrDefault(p => p.PatientId == id);
+            var existingPatient = _context.Patients.FirstOrDefault(p => p.PatientId == id);
 
             if (existingPatient == null)
             {
@@ -65,14 +67,14 @@ namespace IFSPartsMapAPI.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeletePatient(int id)
         {
-            var patient = _iFSPartsMap.Patients.FirstOrDefault(p => p.PatientId == id);
+            var patient = _context.Patients.FirstOrDefault(p => p.PatientId == id);
 
             if (patient == null)
             {
                 return NotFound($"Patient with ID {id} not found.");
             }
 
-            _iFSPartsMap.Patients.Remove(patient);
+            _context.Patients.Remove(patient);
             return NoContent();
         }
     }

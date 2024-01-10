@@ -1,4 +1,5 @@
-﻿using IFSPartsMapAPI.Models;
+﻿using IFSPartsMapAPI.Data;
+using IFSPartsMapAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,17 +9,17 @@ namespace IFSPartsMapAPI.Controllers
     [ApiController]
     public class QuestionResponseController : ControllerBase
     {
-        private readonly IFSPartsMap _iFSPartsMap;
+        private readonly IFSPartsMapDbContext _context;
 
-        public QuestionResponseController(IFSPartsMap iFSPartsMap)
+        public QuestionResponseController(IFSPartsMapDbContext context)
         {
-            _iFSPartsMap = iFSPartsMap ?? throw new ArgumentNullException(nameof(iFSPartsMap));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<QuestionResponse>> GetQuestionResponses(int patientId, int partId)
         {
-            var part = _iFSPartsMap.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
+            var part = _context.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
             if (part == null)
             {
                 return NotFound($"Part with ID {partId} not found for patient ID {patientId}.");
@@ -38,7 +39,7 @@ namespace IFSPartsMapAPI.Controllers
 
         public ActionResult<QuestionResponse> GetQuestionResponse(int patientId, int partId, int responseId)
         {
-            var part = _iFSPartsMap.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
+            var part = _context.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
             if (part == null)
             {
                 return NotFound($"Part with ID {partId} not found for patient ID {patientId}.");
@@ -56,7 +57,7 @@ namespace IFSPartsMapAPI.Controllers
         [HttpPost]
         public ActionResult<QuestionResponse> CreateResponse(int patientId, int partId, QuestionResponse response)
         {
-            var part = _iFSPartsMap.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
+            var part = _context.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
             if (part == null)
             {
                 return NotFound($"Part with ID {partId} not found for patient ID {patientId}.");
@@ -70,7 +71,7 @@ namespace IFSPartsMapAPI.Controllers
         [HttpPut("{responseId}")]
         public IActionResult UpdateResponse(int patientId, int partId, int responseId, QuestionResponse updatedResponse)
         {
-            var part = _iFSPartsMap.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
+            var part = _context.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
             if (part == null)
             {
                 return NotFound($"Part with ID {partId} not found for patient ID {patientId}.");
@@ -92,7 +93,7 @@ namespace IFSPartsMapAPI.Controllers
         [HttpDelete("{responseId}")]
         public IActionResult DeleteResponse(int patientId, int partId, int responseId)
         {
-            var part = _iFSPartsMap.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
+            var part = _context.Parts.FirstOrDefault(p => p.Id == partId && p.PatientId == patientId);
             if (part == null)
             {
                 return NotFound($"Part with ID {partId} not found for patient ID {patientId}.");
