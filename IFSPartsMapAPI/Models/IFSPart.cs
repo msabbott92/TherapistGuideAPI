@@ -11,10 +11,6 @@ namespace IFSPartsMapAPI.Models
         public string? AdditionalNotes { get; set; }
         public int PatientId { get; set; }
 
-        public static implicit operator List<object>(IFSPart v)
-        {
-            throw new NotImplementedException();
-        }
     }
 
 }
